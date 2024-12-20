@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple CMS</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #content { margin: 20px; }
+        .page { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Simple CMS</h1>
+    <div id="content"></div>
+    <script>
+        const API_BASE = '/api/pages';
+
+        // Fetch and display all pages
+        async function fetchPages() {
+            const response = await fetch(API_BASE);
+            const pages = await response.json();
+            const contentDiv = document.getElementById('content');
+            contentDiv.innerHTML = '';
+
+            for (const [id, page] of Object.entries(pages)) {
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'page';
+                pageDiv.innerHTML = `
+                    <h2>${page.title}</h2>
+                    <p>${page.content}</p>
+                    <button onclick="deletePage(${id})">Delete</button>
+                `;
+                contentDiv.appendChild(pageDiv);
+            }
+        }
+
+        // Delete a page
+        async function deletePage(id) {
+            await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+            fetchPages();
+        }
+
+        // Initial fetch
+        fetchPages();
+    </script>
+</body>
+</html>

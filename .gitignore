@@ -1,0 +1,28 @@
+# Ignore virtual environment directory (commonly named 'venv' or 'env')
+venv/
+env/
+
+# Ignore Python bytecode files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Ignore the database file (if using SQLite or another local DB)
+cms.db
+
+# Ignore log files
+*.log
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE/editor config files
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Ignore environment variables file
+.env

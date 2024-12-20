@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Management System</title>
+    <style>
+        /* Your existing styles */
+    </style>
+</head>
+<body>
+    <h1>Content Management System</h1>
+
+    <!-- Login form -->
+    <div id="login" style="display: block;">
+        <h2>Login</h2>
+        <form id="login-form">
+            <label for="username">Username:</label>
+            <input type="text" id="username" placeholder="Enter username" required />
+            <label for="password">Password:</label>
+            <input type="password" id="password" placeholder="Enter password" required />
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <!-- Content editor -->
+    <div id="editor" style="display: none;">
+        <h2>Add or Edit Content</h2>
+        <form id="content-form">
+            <input type="hidden" id="page-id" />
+            <label for="title">Title:</label>
+            <input type="text" id="title" placeholder="Enter page title" required />
+            <label for="content">Content:</label>
+            <textarea id="content" rows="5" placeholder="Enter page content" required></textarea>
+            <button type="submit">Save Page</button>
+        </form>
+
+        <hr />
+
+        <h2>All Pages</h2>
+        <div id="pages"></div>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api/pages';
+        let authHeader = null;
+
+        // Login logic
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Set auth header
+            authHeader = 'Basic ' + btoa(`${username}:${password}`);
+
+            // Test credentials by fetching pages
+            try {
+                await fetchPages();
+                document.getElementById('login').style.display = 'none';
+                document.getElementById('editor').style.display = 'block';
+            } catch (err) {
+                alert('Invalid credentials');
+            }
+        });
+
+        // Fetch and display all pages
+        async function fetchPages() {
+            const response = await fetch(API_BASE, {
+                headers: { 'Authorization': authHeader }
+            });
+            if (response.status === 401) throw new Error('Unauthorized');
+            const pages = await response.json();
+            const pagesDiv = document.getElementById('pages');
+            pagesDiv.innerHTML = '';
+
+            for (const [id, page] of Object.entries(pages)) {
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'page';
+                pageDiv.innerHTML = `
+                    <h3>${page.title}</h3>
+                    <p>${page.content}</p>
+                    <button onclick="editPage(${id})">Edit</button>
+                    <button onclick="deletePage(${id})">Delete</button>
+                `;
+                pagesDiv.appendChild(pageDiv);
+            }
+        }
+
+        // Add or update a page
+        async function savePage(event) {
+            event.preventDefault();
+            const pageId = document.getElementById('page-id').value;
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+
+            const method = pageId ? 'PUT' : 'POST';
+            const url = pageId ? `${API_BASE}/${pageId}` : API_BASE;
+
+            await fetch(url, {
+                method: method,
+                headers: { 
+                    'Authorization': authHeader,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ title, content }),
+            });
+
+            document.getElementById('content-form').reset();
+            fetchPages();
+        }
+
+        // Load a page into the form for editing
+        async function editPage(id) {
+            const response = await fetch(`${API_BASE}/${id}`, {
+                headers: { 'Authorization': authHeader }
+            });
+            const page = await response.json();
+
+            document.getElementById('page-id').value = id;
+            document.getElementById('title').value = page.title;
+            document.getElementById('content').value = page.content;
+        }
+
+        // Delete a page
+        async function deletePage(id) {
+            await fetch(`${API_BASE}/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': authHeader }
+            });
+            fetchPages();
+        }
+
+        // Logout
+        function logout() {
+            authHeader = null;
+            document.getElementById('editor').style.display = 'none';
+            document.getElementById('login').style.display = 'block';
+        }
+
+        // Attach event listener to the content form
+        document.getElementById('content-form').addEventListener('submit', savePage);
+    </script>
+</body>
+</html>
